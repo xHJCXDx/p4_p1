@@ -1,8 +1,6 @@
-# P4 Backend + Frontend Combinado
+# P4 Backend + Frontend
 
-Proyecto Full Stack que combina el backend FastAPI de **p4_b_p1** con el frontend React de **p4_f_tp7**.
-
-## Stack Tecnológico
+## Stack
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
@@ -25,7 +23,7 @@ p4_b_p1/
 │   │   ├── producto/           # CRUD Productos
 │   │   ├── ingrediente/        # CRUD Ingredientes
 │   │   ├── venta/              # CRUD Ventas/Pedidos
-│   │   ├── participante/       # ✨ NUEVO: CRUD Participantes + Login
+│   │   ├── participante/       # CRUD Participantes + Login
 │   │   ├── catalogo/           # Catálogos (FormaPago, EstadoPedido)
 │   │   └── main.py             # Aplicación principal (FastAPI)
 │   ├── requirements.txt
@@ -54,7 +52,7 @@ p4_b_p1/
 
 ## Instalación y Ejecución
 
-### 1️⃣ Backend (FastAPI)
+### 1. Backend (FastAPI)
 
 ```bash
 cd backend
@@ -76,8 +74,8 @@ pip install -r requirements.txt
 fastapi dev app/main.py
 ```
 
-✅ Servidor disponible en: `http://localhost:8000`
-- 📖 Documentación interactiva: `http://localhost:8000/docs`
+ Servidor disponible en: `http://localhost:8000`
+-  Documentación interactiva: `http://localhost:8000/docs`
 
 #### Configuración Opcional: PostgreSQL
 
@@ -102,7 +100,7 @@ Por defecto usa SQLite. Para PostgreSQL:
 
 3. **Reiniciar servidor**: `fastapi dev app/main.py`
 
-### 2️⃣ Frontend (React + Vite)
+### 2. Frontend (React + Vite)
 
 ```bash
 cd frontend
@@ -114,7 +112,7 @@ npm install
 npm run dev
 ```
 
-✅ Aplicación disponible en: `http://localhost:5173`
+Aplicación disponible en: `http://localhost:5173`
 
 ---
 
@@ -127,13 +125,13 @@ Usa estas credenciales para hacer login:
 | admin   | admin123  | ADMIN  |
 | user    | user123   | CONSULTA |
 
-> ⚠️ **Nota**: Las credenciales están hardcodeadas para demo. En producción, usar base de datos + JWT.
+> **Nota**: Las credenciales están hardcodeadas para demo. En producción, usar base de datos + JWT.
 
 ---
 
 ## API Endpoints
 
-### 🔐 Autenticación
+### Autenticación
 
 ```
 POST /login
@@ -141,7 +139,7 @@ POST /login
   Response: { "token": "bearer_...", "user": { "id": 1, "username": "admin", "rol": "ADMIN" } }
 ```
 
-### 👥 Participantes (✨ NUEVO)
+### Participantes
 
 ```
 GET    /participantes?limit=10&offset=0    # Listar con paginación
@@ -164,7 +162,7 @@ DELETE /participantes                      # Eliminar todos
 - `aceptaTerminos`: boolean
 - `created_at`, `updated_at`, `deleted_at`: datetime
 
-### 📦 Otros Módulos (Existentes)
+### Otros Módulos (Existentes)
 
 ```
 GET    /categorias?limit=10&offset=0
@@ -179,7 +177,7 @@ GET    /ventas?limit=10&offset=0
 
 ## Estructura de Respuestas API
 
-### ✅ Respuesta exitosa:
+### Respuesta exitosa:
 ```json
 {
   "success": true,
@@ -209,7 +207,7 @@ GET    /ventas?limit=10&offset=0
 }
 ```
 
-### ❌ Respuesta de error:
+### Respuesta de error:
 ```json
 {
   "success": false,
@@ -223,13 +221,13 @@ GET    /ventas?limit=10&offset=0
 
 ## Frontend: Funcionalidades
 
-### 🔐 Sistema de Autenticación
+### Sistema de Autenticación
 
 - **LoginPage**: Formulario de login con validación
 - **AuthContext**: Maneja `user`, `token`, `login()`, `logout()`
 - **PrivateRoute**: Componente que protege rutas requiriendo autenticación y rol
 
-### 👥 Gestión de Participantes
+### Gestión de Participantes
 
 - **ListaPage**: Tabla de participantes con búsqueda/filtros
 - **FormularioPage**: Crear nuevo participante (solo ADMIN)
@@ -237,7 +235,7 @@ GET    /ventas?limit=10&offset=0
 - **ParticipantesContext**: Maneja CRUD con `useReducer`
 - **useParticipantes()**: Hook personalizado para acceder al contexto
 
-### 🎨 Diseño
+### Diseño
 
 - **Tailwind CSS 4.2**: Utilidades para estilos responsivos
 - **NavBar**: Navegación con links y logout
@@ -316,23 +314,23 @@ app.add_middleware(
 
 ## Troubleshooting
 
-### ❌ Frontend no conecta con Backend
+### Frontend no conecta con Backend
 
-✅ Verificar:
+Verificar:
 - Backend corriendo: `http://localhost:8000/docs`
 - CORS configurado correctamente
 - DevTools → Network → Ver requests y errores
 
-### ❌ Error de base de datos
+### Error de base de datos
 
-✅ Solución:
+Solución:
 ```bash
 cd backend
 rm database.db
 fastapi dev app/main.py
 ```
 
-### ❌ Puertos ocupados
+### Puertos ocupados
 
 ```bash
 # Verificar puerto 8000 (backend)
@@ -343,13 +341,13 @@ netstat -ano | findstr :8000  # Windows
 lsof -i :5173        # macOS/Linux
 ```
 
-### ❌ Módulo no encontrado (Python)
+### Módulo no encontrado (Python)
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### ❌ npm dependencies no instalan
+### npm dependencies no instalan
 
 ```bash
 rm -rf node_modules package-lock.json
@@ -358,9 +356,9 @@ npm install
 
 ---
 
-## Notas Importantes
+## Notas
 
-### 🔒 Seguridad (Para Producción)
+### Seguridad (Para Producción)
 
 - Usar **JWT tokens** en lugar de bearer simple
 - Hashear contraseñas con **bcrypt**
@@ -369,13 +367,13 @@ npm install
 - Usar **HTTPS**
 - Guardar secrets en variables de entorno (`.env`)
 
-### 💾 Base de Datos
+### Base de Datos
 
 - **SQLite**: Perfecta para desarrollo (archivo `database.db`)
 - **PostgreSQL**: Recomendado para producción
 - Soft deletes: Los registros se marcan con `deleted_at`, nunca se borran
 
-### 🚀 Deployment
+### Deployment
 
 - Backend: Heroku, Railway, DigitalOcean (con Gunicorn)
 - Frontend: Vercel, Netlify (build → `npm run build`)
