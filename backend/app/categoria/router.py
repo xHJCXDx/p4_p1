@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
@@ -24,19 +24,6 @@ def read_categorias(
             "offset": offset
         },
         message="Categorías obtenidas exitosamente"
-    )
-
-@router.get("/{categoria_id}")
-def get_categoria(
-    categoria_id: int = Path(..., gt=0, description="ID de la categoría"),
-    session: Session = Depends(get_session)
-) -> ApiResponse:
-    db_categoria = service.get_by_id(session, categoria_id)
-    if not db_categoria:
-        return error_response(message="Categoría no encontrada", status_code=404)
-    return success_response(
-        data=CategoriaRead.model_validate(db_categoria),
-        message="Categoría obtenida exitosamente"
     )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)

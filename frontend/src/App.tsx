@@ -1,52 +1,25 @@
-import { Routes, Route } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-import NavBar from './components/NavBar'
-import LoginPage from './pages/LoginPage'
-import ListaPage from './pages/ListaPage'
-import FormularioPage from './pages/FormularioPage'
-import EditarPage from './pages/EditarPage'
-import PrivateRoute from './routes/PrivateRoute'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import CategoriasPage from './pages/CategoriasPage';
+import ProductsPage from './pages/ProductsPage';
+import IngredientesPageRefactored from './pages/IngredientesPageRefactored';
+import PedidosPageRefactored from './pages/PedidosPageRefactored';
 
 function App() {
-  const { isAuthenticated } = useAuth()
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {isAuthenticated && <NavBar />}
-      <main className="flex-1">
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
         <Routes>
-          {/* Ruta pública de login */}
-          <Route path="/login" element={<LoginPage />} />
-
-          {/* Rutas protegidas */}
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <ListaPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/nuevo"
-            element={
-              <PrivateRoute requiredRole="ADMIN">
-                <FormularioPage />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/editar/:id"
-            element={
-              <PrivateRoute requiredRole="ADMIN">
-                <EditarPage />
-              </PrivateRoute>
-            }
-          />
+          <Route path="/categorias" element={<CategoriasPage />} />
+          <Route path="/productos" element={<ProductsPage />} />
+          <Route path="/ingredientes" element={<IngredientesPageRefactored />} />
+          <Route path="/pedidos" element={<PedidosPageRefactored />} />
+          <Route path="/" element={<Navigate to="/categorias" replace />} />
         </Routes>
-      </main>
-    </div>
-  )
+      </div>
+    </Router>
+  );
 }
 
-export default App
+export default App;

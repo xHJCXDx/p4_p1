@@ -7,9 +7,7 @@ from app.categoria.router import router as categoria_router
 from app.producto.router import router as producto_router
 from app.ingrediente.router import router as ingrediente_router
 from app.venta.router import router as venta_router
-from app.participante.router import router as participante_router
 from app.catalogo.service import seed_catalogos
-from app.participante.model import Participante  # noqa: F401
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -38,7 +36,6 @@ app.include_router(categoria_router)
 app.include_router(producto_router)
 app.include_router(ingrediente_router)
 app.include_router(venta_router)
-app.include_router(participante_router)
 
 @app.get("/")
 def read_root():

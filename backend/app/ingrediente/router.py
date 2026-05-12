@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
@@ -24,19 +24,6 @@ def read_ingredientes(
             "offset": offset
         },
         message="Ingredientes obtenidos exitosamente"
-    )
-
-@router.get("/{ingrediente_id}")
-def get_ingrediente(
-    ingrediente_id: int = Path(..., gt=0, description="ID del ingrediente"),
-    session: Session = Depends(get_session)
-) -> ApiResponse:
-    db_ingrediente = service.get_by_id(session, ingrediente_id)
-    if not db_ingrediente:
-        return error_response(message="Ingrediente no encontrado", status_code=404)
-    return success_response(
-        data=IngredienteRead.model_validate(db_ingrediente),
-        message="Ingrediente obtenido exitosamente"
     )
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
