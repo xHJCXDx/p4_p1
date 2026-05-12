@@ -1,4 +1,7 @@
-# TP Integrador - Programación IV (U5)
+# TP Integrador - Programación
+
+Hiro Cruz 
+Mauricio Manzano 
 
 ## Proyecto Full Stack: React + TypeScript + FastAPI
 
