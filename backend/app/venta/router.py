@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status, Query
 from sqlmodel import Session
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
@@ -18,21 +18,14 @@ from app.venta import service
 router = APIRouter(prefix="/api/v1/pedidos", tags=["Pedidos"])
 
 
-# ============ HELPERS ============
-
 def is_client_only(user: Usuario) -> bool:
-    """Verifica si el usuario es CLIENT sin permisos ADMIN o PEDIDOS."""
     user_roles = [role.codigo for role in user.roles]
     return "CLIENT" in user_roles and "ADMIN" not in user_roles and "PEDIDOS" not in user_roles
 
 
 def is_admin_or_pedidos(user: Usuario) -> bool:
-    """Verifica si el usuario tiene rol ADMIN o PEDIDOS."""
     user_roles = [role.codigo for role in user.roles]
     return "ADMIN" in user_roles or "PEDIDOS" in user_roles
-
-
-# ============ PEDIDO ENDPOINTS ============
 
 @router.get("/")
 def read_pedidos(
@@ -41,14 +34,7 @@ def read_pedidos(
     offset: int = Query(0, ge=0),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """
-    Obtiene pedidos con paginación.
-    - CLIENT: solo ve sus propios pedidos
-    - ADMIN/PEDIDOS: ven todos los pedidos
-    """
-    # Si es CLIENT puro, filtrar solo sus pedidos
     usuario_id = current_user.id if is_client_only(current_user) else None
-
     pedidos, total = service.get_all_pedidos(session, limit, offset, usuario_id=usuario_id)
     return success_response(
         data={
@@ -66,12 +52,10 @@ def read_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Obtiene un pedido por ID."""
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: CLIENT puro solo ve sus propios pedidos
     if is_client_only(current_user) and pedido.usuario_id != current_user.id:
         return error_response(message="No tienes permiso para ver este pedido", status_code=403)
 
@@ -149,21 +133,7 @@ def transition_estado_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """
-    Transiciona el estado de un pedido respetando el FSM.
-
-    Parámetros:
-    - accion: simplificada (confirmar, preparar, enviar, entregar, cancelar)
-    - nuevo_estado: estado directo (alternativa a acción)
-
-    Permisos:
-    - ADMIN y PEDIDOS: pueden cambiar estado de cualquier pedido
-    - CLIENT: solo pueden cancelar su propio pedido (desde PENDIENTE o CONFIRMADO)
-
-    Valida que la transición sea permitida, crea registro en HistorialEstadoPedido.
-    """
     try:
-        # Mapear acción a estado si se proporciona acción
         estado_destino = nuevo_estado
         if accion:
             if accion == "cancelar":
@@ -182,20 +152,11 @@ def transition_estado_pedido(
                 status_code=400
             )
 
-        # Verificar que el usuario está autenticado
-        if not current_user:
-            return error_response(message="Usuario no autenticado", status_code=401)
-
-        # Obtener el pedido
         pedido = service.get_pedido_by_id(session, pedido_id)
         if not pedido:
             return error_response(message="Pedido no encontrado", status_code=404)
 
-        # Validar permisos por rol
-        user_roles = [role.codigo for role in current_user.roles]
-
-        # Si es CLIENT, solo puede cancelar su propio pedido
-        if "CLIENT" in user_roles and "ADMIN" not in user_roles and "PEDIDOS" not in user_roles:
+        if is_client_only(current_user):
             if pedido.usuario_id != current_user.id:
                 return error_response(
                     message="No tienes permiso para modificar pedidos ajenos",
@@ -206,14 +167,12 @@ def transition_estado_pedido(
                     message="CLIENT solo puede cancelar su propio pedido",
                     status_code=403
                 )
-        # Si es ADMIN o PEDIDOS, puede cambiar estado de cualquier pedido
-        elif "ADMIN" not in user_roles and "PEDIDOS" not in user_roles:
+        elif not is_admin_or_pedidos(current_user):
             return error_response(
                 message="No tienes permiso para cambiar estados de pedidos",
                 status_code=403
             )
 
-        # Si no se especifica usuario_id, usar el del token
         if not usuario_id:
             usuario_id = current_user.id
 
@@ -241,13 +200,10 @@ def read_detalles_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Obtiene todos los detalles de un pedido."""
-    # Verificar que el pedido existe
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: CLIENT puro solo ve sus propios pedidos
     if is_client_only(current_user) and pedido.usuario_id != current_user.id:
         return error_response(message="No tienes permiso para ver los detalles de este pedido", status_code=403)
 
@@ -264,17 +220,13 @@ def create_detalle_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Crea un detalle de pedido."""
-    # Verificar que el pedido existe
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: solo ADMIN/PEDIDOS pueden agregar detalles
     if not is_admin_or_pedidos(current_user):
         return error_response(message="No tienes permiso para agregar detalles a pedidos", status_code=403)
 
-    # Asegurar que el pedido_id coincida
     detalle.pedido_id = pedido_id
 
     try:
@@ -286,22 +238,16 @@ def create_detalle_pedido(
         )
     except Exception as e:
         return error_response(message=f"Error al crear detalle: {str(e)}", status_code=400)
-
-# ============ PAGO ENDPOINTS ============
-
 @router.get("/{pedido_id}/pagos")
 def read_pagos_pedido(
     pedido_id: int,
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Obtiene todos los pagos de un pedido."""
-    # Verificar que el pedido existe
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: CLIENT puro solo ve los pagos de sus propios pedidos
     if is_client_only(current_user) and pedido.usuario_id != current_user.id:
         return error_response(message="No tienes permiso para ver los pagos de este pedido", status_code=403)
 
@@ -318,17 +264,13 @@ def create_pago_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Crea un registro de pago para un pedido."""
-    # Verificar que el pedido existe
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: solo ADMIN/PEDIDOS pueden registrar pagos
     if not is_admin_or_pedidos(current_user):
         return error_response(message="No tienes permiso para registrar pagos", status_code=403)
 
-    # Asegurar que el pedido_id coincida
     pago.pedido_id = pedido_id
 
     try:
@@ -349,17 +291,13 @@ def update_pago_pedido(
     session: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ) -> ApiResponse:
-    """Actualiza un pago."""
-    # Verificar que el pedido existe
     pedido = service.get_pedido_by_id(session, pedido_id)
     if not pedido:
         return error_response(message="Pedido no encontrado", status_code=404)
 
-    # Verificar permisos: solo ADMIN/PEDIDOS pueden actualizar pagos
     if not is_admin_or_pedidos(current_user):
         return error_response(message="No tienes permiso para actualizar pagos", status_code=403)
 
-    # Obtener el pago
     db_pago = service.get_pago_by_id(session, pago_id)
     if not db_pago or db_pago.pedido_id != pedido_id:
         return error_response(message="Pago no encontrado", status_code=404)
