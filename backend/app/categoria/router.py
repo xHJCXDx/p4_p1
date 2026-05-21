@@ -1,6 +1,6 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, status, Query
+from sqlmodel import Session, select, func
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
 from app.core.security import require_roles
@@ -17,14 +17,12 @@ def read_categorias(
     offset: int = Query(0, ge=0),
     parent_id: Optional[int] = Query(None, description="Filtrar por categoría padre")
 ) -> ApiResponse:
-    """Listado público de categorías con filtro opcional por parent_id."""
-    # Si parent_id es especificado, filtrar
     if parent_id is not None:
         statement = select(Categoria).where(Categoria.parent_id == parent_id).offset(offset).limit(limit)
         categorias = session.exec(statement).all()
 
-        count_statement = select(Categoria).where(Categoria.parent_id == parent_id)
-        total = len(session.exec(count_statement).all())
+        count_statement = select(func.count(Categoria.id)).where(Categoria.parent_id == parent_id)
+        total = session.exec(count_statement).one()
     else:
         categorias, total = service.get_all(session, limit, offset)
 
