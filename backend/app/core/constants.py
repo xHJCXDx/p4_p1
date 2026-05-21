@@ -27,3 +27,19 @@ TRANSICIONES_PERMITIDAS = {
     "ENTREGADO": [],  # Terminal
     "CANCELADO": [],  # Terminal
 }
+
+# Mapeo de acciones a estados (para transiciones simplificadas desde UI)
+ACCIONES_A_ESTADOS = {
+    "confirmar": "CONFIRMADO",
+    "preparar": "EN_PREP",
+    "enviar": "EN_CAMINO",
+    "entregar": "ENTREGADO",
+}
+
+# Roles (Seed obligatorio)
+ROLES = [
+    {"codigo": "ADMIN", "descripcion": "Administrador del sistema"},
+    {"codigo": "STOCK", "descripcion": "Gestor de Stock"},
+    {"codigo": "PEDIDOS", "descripcion": "Gestor de Pedidos"},
+    {"codigo": "CLIENT", "descripcion": "Cliente"},
+]

@@ -1,108 +1,67 @@
-# P4 Backend + Frontend Combinado
+# TP Integrador - Programación
 
-Proyecto Full Stack que combina el backend FastAPI de **p4_b_p1** con el frontend React de **p4_f_tp7**.
+Hiro Cruz 
+Mauricio Manzano 
 
-## Stack Tecnológico
+## Proyecto Full Stack: React + TypeScript + FastAPI
 
-| Capa | Tecnología | Versión |
-|------|-----------|---------|
-| **Backend** | FastAPI | 0.100+ |
-| **BD** | SQLModel / SQLAlchemy | 2.0+ |
-| **Frontend** | React | 19.2+ |
-| **Router** | React Router | 7.14+ |
-| **Tipos** | TypeScript | ~6.0+ |
-| **Estilos** | Tailwind CSS | 4.2+ |
-| **Build** | Vite | 8.0+ |
+## Requisitos Previos
+
+- Python 3.8+
+- Node.js 18+
+- npm
 
 ## Estructura del Proyecto
 
 ```
-p4_b_p1/
-├── backend/
+p4_b_tp5/
+├── backend/          # API FastAPI
 │   ├── app/
-│   │   ├── core/               # Configuración central (database, response)
-│   │   ├── categoria/          # CRUD Categorías
-│   │   ├── producto/           # CRUD Productos
-│   │   ├── ingrediente/        # CRUD Ingredientes
-│   │   ├── venta/              # CRUD Ventas/Pedidos
-│   │   ├── participante/       # ✨ NUEVO: CRUD Participantes + Login
-│   │   ├── catalogo/           # Catálogos (FormaPago, EstadoPedido)
-│   │   └── main.py             # Aplicación principal (FastAPI)
+│   │   ├── core/          # Configuración central (database, response)
+│   │   ├── categoria/     # Módulo de categorías (router, service, schema, model)
+│   │   ├── producto/      # Módulo de productos (router, service, schema, model)
+│   │   ├── ingrediente/   # Módulo de ingredientes (router, service, schema, model)
+│   │   └── main.py        # Aplicación principal
 │   ├── requirements.txt
-│   ├── api.http                # Ejemplos REST Client
-│   └── database.db             # SQLite (auto-generado)
+│   └── api.http          # Archivo REST Client para pruebas
 │
-└── frontend/
+└── frontend/         # Aplicación React + TypeScript
     ├── src/
-    │   ├── components/         # Componentes reutilizables
-    │   ├── pages/             # Pages (ListaPage, FormularioPage, EditarPage, LoginPage)
-    │   ├── context/           # AuthContext, ParticipantesContext
-    │   ├── models/            # Tipos TypeScript (Participante)
-    │   ├── reducers/          # Reducers para state management
-    │   ├── routes/            # PrivateRoute para proteger rutas
-    │   └── App.tsx            # Router principal
+    │   ├── components/    # Componentes reutilizables
+    │   ├── pages/        # CategoriasPage, ProductsPage, IngredientesPage
+    │   ├── types/        # Tipos TypeScript (Categoria, Producto, Ingrediente)
+    │   └── App.tsx       # Router principal con React Router
     ├── package.json
-    ├── vite.config.ts
-    └── tailwind.config.js
+    └── vite.config.ts
 ```
-
-## Requisitos Previos
-
-- **Python 3.8+**
-- **Node.js 18+**
-- **npm** o **yarn**
 
 ## Instalación y Ejecución
 
-### 1️⃣ Backend (FastAPI)
+### Backend
 
 ```bash
 cd backend
 
-# Crear entorno virtual (opcional pero recomendado)
-python -m venv venv
+# Crear y activar entorno virtual
+python -m venv .venv
 
-# Activar entorno virtual
 # En macOS/Linux:
-source venv/bin/activate
+source .venv/bin/activate
 
 # En Windows:
-venv\Scripts\activate
+.venv\Scripts\activate
 
 # Instalar dependencias
 pip install -r requirements.txt
 
-# Ejecutar servidor (puerto 8000)
-fastapi dev app/main.py
+# Ejecutar servidor
+fastapi dev main.py
 ```
 
-✅ Servidor disponible en: `http://localhost:8000`
-- 📖 Documentación interactiva: `http://localhost:8000/docs`
+El servidor estará disponible en `http://localhost:8000`
+- Documentación interactiva: `http://localhost:8000/docs`
 
-#### Configuración Opcional: PostgreSQL
-
-Por defecto usa SQLite. Para PostgreSQL:
-
-1. **Crear base de datos**:
-   ```bash
-   psql -U postgres
-   CREATE DATABASE p4_p1;
-   \q
-   ```
-
-2. **Crear archivo `.env`** en `backend/`:
-   ```
-   USE_POSTGRES=true
-   DB_USER=postgres
-   DB_PASSWORD=postgres
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=p4_p1
-   ```
-
-3. **Reiniciar servidor**: `fastapi dev app/main.py`
-
-### 2️⃣ Frontend (React + Vite)
+### Frontend
 
 ```bash
 cd frontend
@@ -110,97 +69,170 @@ cd frontend
 # Instalar dependencias
 npm install
 
-# Ejecutar dev server (puerto 5173)
+# Ejecutar en desarrollo
 npm run dev
 ```
 
-✅ Aplicación disponible en: `http://localhost:5173`
+La aplicación estará disponible en `http://localhost:5173`
 
 ---
 
-## Credenciales de Demo
+## Modelo de Datos (Conforme ERD - Dominio 2)
 
-Usa estas credenciales para hacer login:
+### **Tabla: Producto**
+- `id` (BIGINT, PK)
+- `nombre` (VARCHAR(150), NN, Indexed)
+- `descripcion` (TEXT)
+- `precio_base` (DECIMAL(10,2), NN, CHECK >= 0)
+- `imagenes_url` (JSON Array)
+- `stock_cantidad` (INTEGER, NN, DEFAULT 0, CHECK >= 0)
+- `disponible` (BOOLEAN, NN, DEFAULT true)
+- `created_at` (TIMESTAMPTZ, NN)
+- `updated_at` (TIMESTAMPTZ, NN)
+- `deleted_at` (TIMESTAMPTZ, nullable) ← Soft Delete
 
-| Usuario | Contraseña | Rol    |
-|---------|-----------|--------|
-| admin   | admin123  | ADMIN  |
-| user    | user123   | CONSULTA |
+### **Tabla: Categoria**
+- `id` (BIGINT, PK)
+- `parent_id` (BIGINT, FK -> Categoria.id, nullable) ← Jerarquía/Auto-referencia
+- `nombre` (VARCHAR(100), NN, UNIQUE)
+- `descripcion` (TEXT)
+- `imagen_url` (TEXT, nullable)
+- `created_at` (TIMESTAMPTZ, NN)
+- `updated_at` (TIMESTAMPTZ, NN)
+- `deleted_at` (TIMESTAMPTZ, nullable) ← Soft Delete
 
-> ⚠️ **Nota**: Las credenciales están hardcodeadas para demo. En producción, usar base de datos + JWT.
+### **Tabla: Ingrediente**
+- `id` (BIGINT, PK)
+- `nombre` (VARCHAR(100), NN, UNIQUE, Indexed)
+- `descripcion` (TEXT)
+- `es_alergeno` (BOOLEAN, NN, DEFAULT false)
+- `created_at` (TIMESTAMPTZ, NN)
+- `updated_at` (TIMESTAMPTZ, NN)
 
----
+### **Tabla: ProductoCategoria** (Many-to-Many)
+- `producto_id` (BIGINT, PK, FK -> Producto.id)
+- `categoria_id` (BIGINT, PK, FK -> Categoria.id)
+- `es_principal` (BOOLEAN, NN, DEFAULT false)
+- `created_at` (TIMESTAMPTZ, NN)
 
-## API Endpoints
-
-### 🔐 Autenticación
-
-```
-POST /login
-  Request: { "username": "admin", "password": "admin123" }
-  Response: { "token": "bearer_...", "user": { "id": 1, "username": "admin", "rol": "ADMIN" } }
-```
-
-### 👥 Participantes (✨ NUEVO)
-
-```
-GET    /participantes?limit=10&offset=0    # Listar con paginación
-GET    /participantes/{id}                 # Obtener por ID
-POST   /participantes                      # Crear nuevo
-PUT    /participantes/{id}                 # Actualizar
-DELETE /participantes/{id}                 # Eliminar (soft delete)
-DELETE /participantes                      # Eliminar todos
-```
-
-**Campos de Participante**:
-- `id`: integer
-- `nombre`: string
-- `email`: string (único)
-- `edad`: integer (18-120)
-- `pais`: string
-- `modalidad`: "Presencial" | "Virtual" | "Híbrido"
-- `tecnologias`: ["React", "Angular", "Vue", "Node", "Python", "Java"] (array)
-- `nivel`: "Principiante" | "Intermedio" | "Avanzado"
-- `aceptaTerminos`: boolean
-- `created_at`, `updated_at`, `deleted_at`: datetime
-
-### 📦 Otros Módulos (Existentes)
-
-```
-GET    /categorias?limit=10&offset=0
-GET    /productos?limit=10&offset=0
-GET    /ingredientes?limit=10&offset=0
-GET    /ventas?limit=10&offset=0
-```
-
-(Misma estructura: GET by ID, POST create, PUT update, DELETE soft-delete)
+### **Tabla: ProductoIngrediente** (Many-to-Many)
+- `producto_id` (BIGINT, PK, FK -> Producto.id)
+- `ingrediente_id` (BIGINT, PK, FK -> Ingrediente.id)
+- `es_removible` (BOOLEAN, NN, DEFAULT false)
 
 ---
 
-## Estructura de Respuestas API
+## Características Implementadas
 
-### ✅ Respuesta exitosa:
+### Backend (FastAPI)
+
+✅ **CRUD Categorías**
+- `GET /categorias?limit=10&offset=0` - Listar con paginación
+- `GET /categorias/{id}` - Obtener por ID
+- `POST /categorias` - Crear nueva
+- `PUT /categorias/{id}` - Actualizar
+- `DELETE /categorias/{id}` - Soft delete
+
+✅ **CRUD Productos**
+- `GET /productos?limit=10&offset=0` - Listar con paginación
+- `GET /productos/{id}` - Obtener por ID
+- `POST /productos` - Crear nuevo
+- `PUT /productos/{id}` - Actualizar
+- `DELETE /productos/{id}` - Soft delete
+
+✅ **CRUD Ingredientes** _(Nuevo en U5)_
+- `GET /ingredientes?limit=10&offset=0` - Listar con paginación
+- `GET /ingredientes/{id}` - Obtener por ID
+- `POST /ingredientes` - Crear nuevo
+- `PUT /ingredientes/{id}` - Actualizar
+- `DELETE /ingredientes/{id}` - Hard delete (sin soft delete)
+
+✅ **Catálogos** _(Nuevo en U5)_
+- **FormaPago**: MERCADOPAGO, EFECTIVO, TRANSFERENCIA (seed automático)
+- **EstadoPedido**: PENDIENTE, CONFIRMADO, EN_PREP, EN_CAMINO, ENTREGADO, CANCELADO (seed automático)
+
+✅ **CRUD Pedidos** _(Nuevo en U5)_
+- `GET /pedidos?limit=10&offset=0` - Listar con paginación
+- `GET /pedidos/{id}` - Obtener por ID
+- `POST /pedidos` - Crear nuevo pedido
+- `PUT /pedidos/{id}` - Actualizar pedido (notas, costo_envio, etc)
+- `DELETE /pedidos/{id}` - Soft delete
+- `POST /pedidos/{id}/transition-estado` - Transicionar estado (con validación FSM)
+- `GET /pedidos/{id}/detalles` - Obtener detalles del pedido
+- `POST /pedidos/{id}/detalles` - Agregar detalle a pedido
+- `GET /pedidos/{id}/pagos` - Obtener pagos
+- `POST /pedidos/{id}/pagos` - Registrar pago (MercadoPago)
+- `PUT /pedidos/{id}/pagos/{pago_id}` - Actualizar pago
+
+✅ **Características Técnicas**
+- **Paginación**: Query params `limit` (1-100, default 10) y `offset` (default 0)
+- **Respuestas estandarizadas**: `{ success, message, data, status_code }`
+- **Soft Delete**: Registros marcados con `deleted_at` en lugar de borrados (excepto Ingredientes)
+- **Auditoría**: `created_at`, `updated_at`, `deleted_at` en todas las tablas
+- **Relaciones**: Many-to-Many (Producto ↔ Categoría, Producto ↔ Ingrediente), Auto-referencia (Categoría)
+- **CORS**: Configurado para localhost:5173
+- **Docs automáticos**: Swagger en /docs
+- **FSM (Finite State Machine)**: Validación automática de transiciones de estado en Pedidos
+- **Snapshots**: Copias immutables de precio y nombre en DetallePedido para integridad histórica
+- **Seed automático**: FormaPago y EstadoPedido se crean al iniciar la aplicación
+
+### Frontend (React + TypeScript)
+
+**Routing con React Router**
+- `/categorias` - Página de Categorías
+- `/productos` - Página de Productos
+- `/ingredientes` - Página de Ingredientes _(Nuevo en U5)_
+- `/pedidos` - Página de Pedidos _(Nuevo en U5)_
+- Redirección automática `/` → `/categorias`
+
+**CategoriasPage**
+- useState para estado local (categorías, modal, selección)
+- useEffect para cargar datos al montar
+- Fetch nativo con paginación
+- Modal para crear/editar
+- Lista con botones editar/eliminar
+- Manejo de errores y loading
+
+**ProductsPage**
+- Estructura similar a CategoriasPage
+- Grid responsivo de productos
+- Formulario integrado en modal
+- Campos: nombre, descripción, precio, imágenes (array), stock, disponibilidad
+
+**IngredientesPage** _(Nuevo en U5)_
+- Grid responsivo de ingredientes
+- Indicadores visuales para alergenos (⚠️ o ✓)
+- CRUD completo con modal
+- Manejo de propiedades: es_alergeno
+
+**PedidosPage** _(Nuevo en U5)_
+- Tabla responsiva con listado de pedidos
+- Badges de estado con colores distintivos (PENDIENTE, CONFIRMADO, EN_PREP, etc)
+- Información: usuario, estado, total, forma de pago
+- Modal para crear nuevo pedido
+- Manejo de paginación
+
+**Navbar actualizado**
+- Links de navegación (Categorías / Productos / Ingredientes / Pedidos)
+- Título actualizado: "TP Programación IV - U5"
+- Estilos hover y animaciones
+
+**Diseño con Tailwind CSS**
+- Componentes responsivos
+- Tema profesional blue/gray
+- Validación en formularios
+
+---
+
+## Estructura de Respuestas
+
+### Respuesta exitosa con paginación:
 ```json
 {
   "success": true,
-  "message": "Participantes obtenidos exitosamente",
+  "message": "Categorías obtenidas exitosamente",
   "data": {
-    "items": [
-      {
-        "id": 1,
-        "nombre": "Juan Pérez",
-        "email": "juan@example.com",
-        "edad": 25,
-        "pais": "Argentina",
-        "modalidad": "Virtual",
-        "tecnologias": ["React", "Python"],
-        "nivel": "Intermedio",
-        "aceptaTerminos": true,
-        "created_at": "2025-05-03T10:30:00",
-        "updated_at": "2025-05-03T10:30:00",
-        "deleted_at": null
-      }
-    ],
+    "items": [...],
     "total": 15,
     "limit": 10,
     "offset": 0
@@ -209,11 +241,11 @@ GET    /ventas?limit=10&offset=0
 }
 ```
 
-### ❌ Respuesta de error:
+### Respuesta de error:
 ```json
 {
   "success": false,
-  "message": "Participante no encontrado",
+  "message": "Categoría no encontrada",
   "data": null,
   "status_code": 404
 }
@@ -221,173 +253,59 @@ GET    /ventas?limit=10&offset=0
 
 ---
 
-## Frontend: Funcionalidades
+## Pruebas de la API
 
-### 🔐 Sistema de Autenticación
+Usa el archivo `backend/api.http` para probar los endpoints con:
+- **Visual Studio Code**: Extensión "REST Client" (REST Client Extension)
+- **Postman**: Importar y ejecutar
+- **Insomnia**: Importar y ejecutar
 
-- **LoginPage**: Formulario de login con validación
-- **AuthContext**: Maneja `user`, `token`, `login()`, `logout()`
-- **PrivateRoute**: Componente que protege rutas requiriendo autenticación y rol
-
-### 👥 Gestión de Participantes
-
-- **ListaPage**: Tabla de participantes con búsqueda/filtros
-- **FormularioPage**: Crear nuevo participante (solo ADMIN)
-- **EditarPage**: Editar participante existente (solo ADMIN)
-- **ParticipantesContext**: Maneja CRUD con `useReducer`
-- **useParticipantes()**: Hook personalizado para acceder al contexto
-
-### 🎨 Diseño
-
-- **Tailwind CSS 4.2**: Utilidades para estilos responsivos
-- **NavBar**: Navegación con links y logout
-- **Componentes reutilizables**: Filtros, Formularios, Cards
-- **Tema**: Profesional blue/gray con animaciones suaves
-
----
-
-## Desarrollo
-
-### Agregar un nuevo endpoint
-
-1. **Crear modelo** (`app/nuevo_modulo/model.py`):
-   ```python
-   from sqlmodel import Field, SQLModel
-   
-   class Nuevo(SQLModel, table=True):
-       id: Optional[int] = Field(default=None, primary_key=True)
-       nombre: str
-   ```
-
-2. **Crear schema** (`app/nuevo_modulo/schema.py`):
-   ```python
-   class NuevoCreate(NuevoBase): pass
-   class NuevoRead(NuevoBase): id: int
-   ```
-
-3. **Crear repository** (`app/nuevo_modulo/repository.py`)
-4. **Crear service** (`app/nuevo_modulo/service.py`)
-5. **Crear unit_of_work** (`app/nuevo_modulo/unit_of_work.py`)
-6. **Crear router** (`app/nuevo_modulo/router.py`)
-7. **Registrar en main.py**:
-   ```python
-   from app.nuevo_modulo.router import router as nuevo_router
-   app.include_router(nuevo_router)
-   ```
-
-### Consumir API desde Frontend
-
-```typescript
-// Usar el contexto de Participantes
-const { participantes, agregar, editar, eliminar } = useParticipantes()
-
-// O usar fetch directo
-const response = await fetch('http://localhost:8000/participantes', {
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-})
-```
-
----
-
-## CORS Configuration
-
-El CORS está configurado para `localhost:5173` en `app/main.py`:
-
-```python
-origins = [
-    "http://localhost:5173",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-**Para producción**, actualizar `origins` a dominios reales.
-
----
-
-## Troubleshooting
-
-### ❌ Frontend no conecta con Backend
-
-✅ Verificar:
-- Backend corriendo: `http://localhost:8000/docs`
-- CORS configurado correctamente
-- DevTools → Network → Ver requests y errores
-
-### ❌ Error de base de datos
-
-✅ Solución:
-```bash
-cd backend
-rm database.db
-fastapi dev app/main.py
-```
-
-### ❌ Puertos ocupados
-
-```bash
-# Verificar puerto 8000 (backend)
-lsof -i :8000        # macOS/Linux
-netstat -ano | findstr :8000  # Windows
-
-# Verificar puerto 5173 (frontend)
-lsof -i :5173        # macOS/Linux
-```
-
-### ❌ Módulo no encontrado (Python)
-
-```bash
-pip install -r requirements.txt
-```
-
-### ❌ npm dependencies no instalan
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
+Incluye ejemplos de:
+- CRUD de Categorías (con parent_id para subcategorías)
+- CRUD de Productos (con imagenes_url array y stock_cantidad)
+- Paginación (limit y offset)
+- Soft deletes
 
 ---
 
 ## Notas Importantes
 
-### 🔒 Seguridad (Para Producción)
+### Base de Datos
+- SQLite en memoria (desarrollo)
+- Fácilmente configurable a PostgreSQL en `app/core/database.py`
 
-- Usar **JWT tokens** en lugar de bearer simple
-- Hashear contraseñas con **bcrypt**
-- Implementar **refresh tokens**
-- Validar headers **CORS** estrictamente
-- Usar **HTTPS**
-- Guardar secrets en variables de entorno (`.env`)
+### Frontend
+- Conecta automáticamente a `http://localhost:8000`
+- Manejo de respuestas estandarizadas con paginación
+- HMR (Hot Module Reload) habilitado con Vite
 
-### 💾 Base de Datos
+### Backend
+- FastAPI dev mode con auto-reload
+- Validación con Pydantic
+- Documentación automática en `/docs`
 
-- **SQLite**: Perfecta para desarrollo (archivo `database.db`)
-- **PostgreSQL**: Recomendado para producción
-- Soft deletes: Los registros se marcan con `deleted_at`, nunca se borran
+### Auditoría y Soft Deletes
+- Los registros **nunca se borran físicamente**
+- El campo `deleted_at` marca la eliminación lógica
+- Todas las queries filtran automáticamente `deleted_at IS NULL`
+- Útil para reportes y auditoría
 
-### 🚀 Deployment
-
-- Backend: Heroku, Railway, DigitalOcean (con Gunicorn)
-- Frontend: Vercel, Netlify (build → `npm run build`)
+### Jerarquía de Categorías
+- Campo `parent_id` permite categorías padre/hijas
+- Auto-referencia en la tabla Categoria
+- Ejemplo: "Alimentos" (padre) → "Bebidas" (hija)
 
 ---
 
-## Referencias
+## Stack Tecnológico
 
-- [FastAPI Documentation](https://fastapi.tiangolo.com)
-- [React Documentation](https://react.dev)
-- [SQLModel Documentation](https://sqlmodel.tiangolo.com)
-- [Vite Documentation](https://vite.dev)
-- [React Router v7](https://reactrouter.com)
-- [Tailwind CSS](https://tailwindcss.com)
+| Capa | Tecnología | Versión |
+|------|-----------|---------|
+| **Backend** | FastAPI | 0.100+ |
+| **BD** | SQLModel / SQLAlchemy | 2.0+ |
+| **Frontend** | React | 18.2+ |
+| **Router** | React Router | 6.20+ |
+| **Tipos** | TypeScript | 5.2+ |
+| **Estilos** | Tailwind CSS | 3.4+ |
+| **Build** | Vite | 8.0+ |
 

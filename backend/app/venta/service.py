@@ -5,6 +5,7 @@ from app.venta.model import Pedido, DetallePedido, Pago, HistorialEstadoPedido
 from app.venta.schema import PedidoCreate, PedidoUpdate, DetallePedidoCreate, PagoCreate
 from app.venta.unit_of_work import VentaUnitOfWork
 from app.core.constants import TRANSICIONES_PERMITIDAS
+from app.producto.model import Producto
 
 
 # ============ PEDIDO SERVICE ============
@@ -117,6 +118,11 @@ def get_detalles_by_pedido(session: Session, pedido_id: int) -> List[DetallePedi
 
 def create_detalle_pedido(session: Session, detalle_data: DetallePedidoCreate) -> DetallePedido:
     """Crea un detalle de pedido (immutable después de creación)."""
+    # Validar que el producto existe
+    producto = session.get(Producto, detalle_data.producto_id)
+    if not producto or producto.deleted_at is not None:
+        raise ValueError(f"Producto {detalle_data.producto_id} no existe o ha sido eliminado")
+
     with VentaUnitOfWork(session) as uow:
         new_detalle = DetallePedido.model_validate(detalle_data)
         detalle = uow.detalles.create(new_detalle)
@@ -131,8 +137,19 @@ def get_pagos_by_pedido(session: Session, pedido_id: int) -> List[Pago]:
         return uow.pagos.get_by_pedido(pedido_id)
 
 
+def get_pago_by_id(session: Session, pago_id: int) -> Optional[Pago]:
+    """Obtiene un pago por ID."""
+    with VentaUnitOfWork(session) as uow:
+        return uow.pagos.get_by_id(pago_id)
+
+
 def create_pago(session: Session, pago_data: PagoCreate) -> Pago:
     """Crea un registro de pago."""
+    # Validar que el pedido existe
+    pedido = session.get(Pedido, pago_data.pedido_id)
+    if not pedido or pedido.deleted_at is not None:
+        raise ValueError(f"Pedido {pago_data.pedido_id} no existe o ha sido eliminado")
+
     with VentaUnitOfWork(session) as uow:
         new_pago = Pago.model_validate(pago_data)
         pago = uow.pagos.create(new_pago)

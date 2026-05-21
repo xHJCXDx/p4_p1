@@ -1,20 +1,32 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from sqlmodel import Session
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlmodel import Session, select
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
+from app.core.security import require_roles
 from app.categoria.schema import CategoriaCreate, CategoriaRead, CategoriaUpdate
+from app.categoria.model import Categoria
 from app.categoria import service
 
-router = APIRouter(prefix="/categorias", tags=["Categorias"])
+router = APIRouter(prefix="/api/v1/categorias", tags=["Categorias"])
 
 @router.get("/")
 def read_categorias(
     session: Session = Depends(get_session),
     limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
+    parent_id: Optional[int] = Query(None, description="Filtrar por categoría padre")
 ) -> ApiResponse:
-    categorias, total = service.get_all(session, limit, offset)
+    """Listado público de categorías con filtro opcional por parent_id."""
+    # Si parent_id es especificado, filtrar
+    if parent_id is not None:
+        statement = select(Categoria).where(Categoria.parent_id == parent_id).offset(offset).limit(limit)
+        categorias = session.exec(statement).all()
+
+        count_statement = select(Categoria).where(Categoria.parent_id == parent_id)
+        total = len(session.exec(count_statement).all())
+    else:
+        categorias, total = service.get_all(session, limit, offset)
 
     return success_response(
         data={
@@ -26,21 +38,9 @@ def read_categorias(
         message="Categorías obtenidas exitosamente"
     )
 
-@router.get("/{categoria_id}")
-def get_categoria(
-    categoria_id: int = Path(..., gt=0, description="ID de la categoría"),
-    session: Session = Depends(get_session)
-) -> ApiResponse:
-    db_categoria = service.get_by_id(session, categoria_id)
-    if not db_categoria:
-        return error_response(message="Categoría no encontrada", status_code=404)
-    return success_response(
-        data=CategoriaRead.model_validate(db_categoria),
-        message="Categoría obtenida exitosamente"
-    )
-
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("ADMIN"))])
 def create_categoria(categoria: CategoriaCreate, session: Session = Depends(get_session)) -> ApiResponse:
+    """Crear categoría (solo ADMIN)."""
     new_categoria = service.create(session, categoria)
     return success_response(
         data=CategoriaRead.model_validate(new_categoria),
@@ -48,8 +48,9 @@ def create_categoria(categoria: CategoriaCreate, session: Session = Depends(get_
         status_code=201
     )
 
-@router.put("/{categoria_id}")
+@router.put("/{categoria_id}", dependencies=[Depends(require_roles("ADMIN"))])
 def update_categoria(categoria_id: int, categoria: CategoriaUpdate, session: Session = Depends(get_session)) -> ApiResponse:
+    """Actualizar categoría (solo ADMIN)."""
     db_categoria = service.get_by_id(session, categoria_id)
     if not db_categoria:
         return error_response(message="Categoría no encontrada", status_code=404)
@@ -59,11 +60,27 @@ def update_categoria(categoria_id: int, categoria: CategoriaUpdate, session: Ses
         message="Categoría actualizada exitosamente"
     )
 
-@router.delete("/{categoria_id}")
+@router.delete("/{categoria_id}", dependencies=[Depends(require_roles("ADMIN"))])
 def delete_categoria(categoria_id: int, session: Session = Depends(get_session)) -> ApiResponse:
+    """Eliminar categoría (soft delete, solo ADMIN). No se puede eliminar si tiene productos activos."""
+    from app.producto.model import ProductoCategoriaLink
+    from sqlmodel import and_
+
     db_categoria = service.get_by_id(session, categoria_id)
     if not db_categoria:
         return error_response(message="Categoría no encontrada", status_code=404)
+
+    # Verificar si tiene productos activos (deleted_at IS NULL)
+    productos_activos = session.exec(
+        select(ProductoCategoriaLink).where(ProductoCategoriaLink.categoria_id == categoria_id)
+    ).all()
+
+    if productos_activos:
+        return error_response(
+            message="No se puede eliminar la categoría porque tiene productos asociados",
+            status_code=409
+        )
+
     service.delete(session, db_categoria)
     return success_response(
         message="Categoría eliminada exitosamente",
