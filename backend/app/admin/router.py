@@ -1,5 +1,4 @@
-"""Router para Panel Administrativo."""
-
+from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, status, Query
 from sqlmodel import Session, select
@@ -7,7 +6,7 @@ from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
 from app.core.security import require_roles
 from app.usuario.model import Usuario, Rol, UsuarioRolLink
-from app.usuario.schema import UsuarioRead, UsuarioUpdate
+from app.usuario.schema import UsuarioUpdate
 from app.usuario import service as usuario_service
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
@@ -20,23 +19,11 @@ def listar_usuarios(
     offset: int = Query(0, ge=0),
     rol: Optional[str] = Query(None, description="Filtrar por rol")
 ) -> ApiResponse:
-    """
-    Lista usuarios paginado, opcionalmente filtrando por rol (solo ADMIN).
-    """
     usuarios, total = usuario_service.get_all_paginado(session, limit=limit, offset=offset, rol_codigo=rol)
 
     return success_response(
         data={
-            "items": [
-                UsuarioRead(
-                    id=u.id,
-                    nombre=u.nombre,
-                    email=u.email,
-                    roles=[{"codigo": r.codigo, "descripcion": r.descripcion} for r in u.roles],
-                    created_at=u.created_at.isoformat()
-                )
-                for u in usuarios
-            ],
+            "items": [usuario_service.usuario_to_read(u) for u in usuarios],
             "total": total,
             "limit": limit,
             "offset": offset
@@ -51,7 +38,6 @@ def actualizar_usuario(
     data: UsuarioUpdate,
     session: Session = Depends(get_session)
 ) -> ApiResponse:
-    """Actualiza datos del usuario (solo ADMIN)."""
     usuario = session.get(Usuario, usuario_id)
     if not usuario:
         return error_response(message="Usuario no encontrado", status_code=404)
@@ -66,13 +52,7 @@ def actualizar_usuario(
         session.commit()
 
         return success_response(
-            data=UsuarioRead(
-                id=usuario.id,
-                nombre=usuario.nombre,
-                email=usuario.email,
-                roles=[{"codigo": r.codigo, "descripcion": r.descripcion} for r in usuario.roles],
-                created_at=usuario.created_at.isoformat()
-            ),
+            data=usuario_service.usuario_to_read(usuario),
             message="Usuario actualizado"
         )
     except Exception as e:
@@ -84,12 +64,10 @@ def eliminar_usuario(
     usuario_id: int,
     session: Session = Depends(get_session)
 ) -> ApiResponse:
-    """Soft delete de usuario (solo ADMIN)."""
     usuario = session.get(Usuario, usuario_id)
     if not usuario:
         return error_response(message="Usuario no encontrado", status_code=404)
 
-    from datetime import datetime
     usuario.deleted_at = datetime.utcnow()
     session.add(usuario)
     session.commit()
@@ -103,7 +81,6 @@ def asignar_rol(
     rol_codigo: str = Query(...),
     session: Session = Depends(get_session)
 ) -> ApiResponse:
-    """Asigna un rol a un usuario (solo ADMIN)."""
     usuario = session.get(Usuario, usuario_id)
     if not usuario:
         return error_response(message="Usuario no encontrado", status_code=404)
@@ -112,7 +89,6 @@ def asignar_rol(
     if not rol:
         return error_response(message="Rol no encontrado", status_code=404)
 
-    # Verificar que no tenga ya el rol
     existing = session.exec(
         select(UsuarioRolLink).where(
             (UsuarioRolLink.usuario_id == usuario_id) & (UsuarioRolLink.rol_codigo == rol_codigo)
@@ -127,16 +103,9 @@ def asignar_rol(
         session.add(usuario_rol)
         session.commit()
 
-        # Recargar usuario con nuevos roles
         usuario = session.get(Usuario, usuario_id)
         return success_response(
-            data=UsuarioRead(
-                id=usuario.id,
-                nombre=usuario.nombre,
-                email=usuario.email,
-                roles=[{"codigo": r.codigo, "descripcion": r.descripcion} for r in usuario.roles],
-                created_at=usuario.created_at.isoformat()
-            ),
+            data=usuario_service.usuario_to_read(usuario),
             message="Rol asignado",
             status_code=201
         )
