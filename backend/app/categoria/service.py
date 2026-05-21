@@ -7,19 +7,16 @@ from app.categoria.unit_of_work import CategoriaUnitOfWork
 
 
 def get_all(session: Session, limit: int = 100, offset: int = 0) -> Tuple[List[Categoria], int]:
-    """Get all categorias (excluding soft-deleted) with pagination"""
     with CategoriaUnitOfWork(session) as uow:
         return uow.categorias.get_all(limit, offset)
 
 
 def get_by_id(session: Session, categoria_id: int) -> Optional[Categoria]:
-    """Get categoria by ID (returns None if soft-deleted)"""
     with CategoriaUnitOfWork(session) as uow:
         return uow.categorias.get_by_id(categoria_id)
 
 
 def create(session: Session, categoria_data: CategoriaCreate) -> Categoria:
-    """Create a new categoria"""
     with CategoriaUnitOfWork(session) as uow:
         db_categoria = Categoria.model_validate(categoria_data)
         categoria = uow.categorias.create(db_categoria)
@@ -28,10 +25,8 @@ def create(session: Session, categoria_data: CategoriaCreate) -> Categoria:
 
 
 def update(session: Session, db_categoria: Categoria, categoria_data: CategoriaUpdate) -> Categoria:
-    """Update a categoria"""
     with CategoriaUnitOfWork(session) as uow:
         categoria_dict = categoria_data.model_dump(exclude_unset=True)
-        # Actualizar timestamp
         categoria_dict["updated_at"] = datetime.utcnow()
         updated = uow.categorias.update(db_categoria, categoria_dict)
     session.refresh(updated)
@@ -39,6 +34,5 @@ def update(session: Session, db_categoria: Categoria, categoria_data: CategoriaU
 
 
 def delete(session: Session, db_categoria: Categoria):
-    """Soft delete a categoria"""
     with CategoriaUnitOfWork(session) as uow:
         uow.categorias.delete(db_categoria)
