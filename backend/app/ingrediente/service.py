@@ -7,19 +7,16 @@ from app.ingrediente.unit_of_work import IngredienteUnitOfWork
 
 
 def get_all(session: Session, limit: int = 100, offset: int = 0) -> Tuple[List[Ingrediente], int]:
-    """Get all ingredientes with pagination"""
     with IngredienteUnitOfWork(session) as uow:
         return uow.ingredientes.get_all(limit, offset)
 
 
 def get_by_id(session: Session, ingrediente_id: int) -> Optional[Ingrediente]:
-    """Get ingrediente by ID"""
     with IngredienteUnitOfWork(session) as uow:
         return uow.ingredientes.get_by_id(ingrediente_id)
 
 
 def create(session: Session, ingrediente_data: IngredienteCreate) -> Ingrediente:
-    """Create a new ingrediente"""
     with IngredienteUnitOfWork(session) as uow:
         db_ingrediente = Ingrediente.model_validate(ingrediente_data)
         ingrediente = uow.ingredientes.create(db_ingrediente)
@@ -28,10 +25,8 @@ def create(session: Session, ingrediente_data: IngredienteCreate) -> Ingrediente
 
 
 def update(session: Session, db_ingrediente: Ingrediente, ingrediente_data: IngredienteUpdate) -> Ingrediente:
-    """Update an ingrediente"""
     with IngredienteUnitOfWork(session) as uow:
         ingrediente_dict = ingrediente_data.model_dump(exclude_unset=True)
-        # Actualizar timestamp
         ingrediente_dict["updated_at"] = datetime.utcnow()
         updated = uow.ingredientes.update(db_ingrediente, ingrediente_dict)
     session.refresh(updated)
@@ -39,6 +34,5 @@ def update(session: Session, db_ingrediente: Ingrediente, ingrediente_data: Ingr
 
 
 def delete(session: Session, db_ingrediente: Ingrediente):
-    """Delete an ingrediente (physical delete per ERD)"""
     with IngredienteUnitOfWork(session) as uow:
         uow.ingredientes.delete(db_ingrediente)
