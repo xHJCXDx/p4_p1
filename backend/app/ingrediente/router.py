@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status, Query
 from sqlmodel import Session
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
