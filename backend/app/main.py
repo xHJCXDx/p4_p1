@@ -4,19 +4,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from app.core.database import create_db_and_tables, engine
 from app.core.constants import ROLES
+from app.core.security import hash_password
 from app.categoria.router import router as categoria_router
 from app.producto.router import router as producto_router
 from app.ingrediente.router import router as ingrediente_router
 from app.venta.router import router as venta_router
 from app.usuario.router import router as auth_router
+from app.usuario.model import Rol, Usuario
 from app.direccion.router import router as direccion_router
 from app.admin.router import router as admin_router
 from app.catalogo.service import seed_catalogos
 from app.seed import seed_data_completo
-from app.usuario.model import Rol, Usuario
-from app.usuario.service import register_user
-from app.usuario.schema import UsuarioCreate
-from app.core.security import hash_password
 
 
 def seed_roles(session: Session):
@@ -55,7 +53,6 @@ def seed_admin_user(session: Session):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    # Seed data obligatorio y demostrativo
     with Session(engine) as session:
         seed_roles(session)
         seed_catalogos(session)
@@ -65,7 +62,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Configuración de CORS
 origins = [
     "http://localhost:5173",
 ]
