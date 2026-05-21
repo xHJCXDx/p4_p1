@@ -1,8 +1,5 @@
-"""Router para Autenticación y Usuario."""
-
 from datetime import timedelta
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, status, Response
 from sqlmodel import Session
 
 from app.core.database import get_session
@@ -13,7 +10,7 @@ from app.core.security import (
     verify_password,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
-from app.usuario.schema import UsuarioCreate, UsuarioLogin, UsuarioRead, UsuarioUpdate
+from app.usuario.schema import UsuarioCreate, UsuarioLogin
 from app.usuario.model import Usuario
 from app.usuario import service
 
@@ -25,19 +22,10 @@ def register(
     user_data: UsuarioCreate,
     session: Session = Depends(get_session)
 ) -> ApiResponse:
-    """
-    Registra un nuevo usuario y le asigna automáticamente el rol CLIENT.
-    """
     try:
         new_user = service.register_user(session, user_data)
         return success_response(
-            data=UsuarioRead(
-                id=new_user.id,
-                nombre=new_user.nombre,
-                email=new_user.email,
-                roles=[{"codigo": role.codigo, "descripcion": role.descripcion} for role in new_user.roles],
-                created_at=new_user.created_at.isoformat()
-            ),
+            data=service.usuario_to_read(new_user),
             message="Usuario registrado exitosamente",
             status_code=201
         )
@@ -53,9 +41,6 @@ def login(
     response: Response,
     session: Session = Depends(get_session)
 ) -> ApiResponse:
-    """
-    Autentica un usuario y retorna un JWT en una cookie httpOnly.
-    """
     user = service.login_user(session, credentials.email, credentials.password)
 
     if not user:
@@ -64,48 +49,31 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED
         )
 
-    # Crear JWT token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.id},
         expires_delta=access_token_expires
     )
 
-    # Establecer cookie httpOnly
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,  # Cambiar a True en producción con HTTPS
+        secure=False,
         samesite="lax",
         max_age=60 * ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     return success_response(
-        data=UsuarioRead(
-            id=user.id,
-            nombre=user.nombre,
-            email=user.email,
-            roles=[{"codigo": role.codigo, "descripcion": role.descripcion} for role in user.roles],
-            created_at=user.created_at.isoformat()
-        ),
+        data=service.usuario_to_read(user),
         message="Autenticación exitosa"
     )
 
 
 @router.get("/me")
 def get_me(current_user: Usuario = Depends(get_current_user)) -> ApiResponse:
-    """
-    Retorna los datos del usuario autenticado.
-    """
     return success_response(
-        data=UsuarioRead(
-            id=current_user.id,
-            nombre=current_user.nombre,
-            email=current_user.email,
-            roles=[{"codigo": role.codigo, "descripcion": role.descripcion} for role in current_user.roles],
-            created_at=current_user.created_at.isoformat()
-        ),
+        data=service.usuario_to_read(current_user),
         message="Datos del usuario obtenidos"
     )
 
