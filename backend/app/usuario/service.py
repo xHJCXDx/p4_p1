@@ -1,11 +1,19 @@
-"""Service para Usuario."""
-
 from typing import Optional, Tuple, List
 from sqlmodel import Session, select
 from app.usuario.model import Usuario, Rol, UsuarioRolLink
-from app.usuario.schema import UsuarioCreate, UsuarioUpdate
+from app.usuario.schema import UsuarioCreate, UsuarioUpdate, UsuarioRead
 from app.core.security import hash_password, verify_password
 from app.usuario.unit_of_work import UsuarioUnitOfWork
+
+
+def usuario_to_read(usuario: Usuario) -> UsuarioRead:
+    return UsuarioRead(
+        id=usuario.id,
+        nombre=usuario.nombre,
+        email=usuario.email,
+        roles=[{"codigo": r.codigo, "descripcion": r.descripcion} for r in usuario.roles],
+        created_at=usuario.created_at.isoformat()
+    )
 
 
 def get_all_paginado(session: Session, limit: int = 10, offset: int = 0, rol_codigo: Optional[str] = None) -> Tuple[List[Usuario], int]:
