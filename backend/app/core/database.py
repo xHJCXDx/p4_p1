@@ -1,11 +1,16 @@
 import os
 from sqlmodel import SQLModel, create_engine, Session
 
-# PostgreSQL Configuration
+# SQLite Configuration
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/p4_p1"
+    "sqlite:///database.db"
 )
+
+# JWT Configuration
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "tu-clave-secreta-super-segura-para-desarrollo-local")
+JWT_ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 engine = create_engine(
     DATABASE_URL,

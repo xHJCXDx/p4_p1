@@ -1,12 +1,13 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status, Query
 from sqlmodel import Session
 from app.core.database import get_session
 from app.core.response import success_response, error_response, ApiResponse
+from app.core.security import require_roles
 from app.ingrediente.schema import IngredienteCreate, IngredienteRead, IngredienteUpdate
 from app.ingrediente import service
 
-router = APIRouter(prefix="/ingredientes", tags=["Ingredientes"])
+router = APIRouter(prefix="/api/v1/ingredientes", tags=["Ingredientes"])
 
 @router.get("/")
 def read_ingredientes(
@@ -26,8 +27,9 @@ def read_ingredientes(
         message="Ingredientes obtenidos exitosamente"
     )
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("ADMIN"))])
 def create_ingrediente(ingrediente: IngredienteCreate, session: Session = Depends(get_session)) -> ApiResponse:
+    """Crear ingrediente (solo ADMIN)."""
     new_ingrediente = service.create(session, ingrediente)
     return success_response(
         data=IngredienteRead.model_validate(new_ingrediente),
@@ -35,8 +37,9 @@ def create_ingrediente(ingrediente: IngredienteCreate, session: Session = Depend
         status_code=201
     )
 
-@router.put("/{ingrediente_id}")
+@router.put("/{ingrediente_id}", dependencies=[Depends(require_roles("ADMIN"))])
 def update_ingrediente(ingrediente_id: int, ingrediente: IngredienteUpdate, session: Session = Depends(get_session)) -> ApiResponse:
+    """Actualizar ingrediente (solo ADMIN)."""
     db_ingrediente = service.get_by_id(session, ingrediente_id)
     if not db_ingrediente:
         return error_response(message="Ingrediente no encontrado", status_code=404)
@@ -46,8 +49,9 @@ def update_ingrediente(ingrediente_id: int, ingrediente: IngredienteUpdate, sess
         message="Ingrediente actualizado exitosamente"
     )
 
-@router.delete("/{ingrediente_id}")
+@router.delete("/{ingrediente_id}", dependencies=[Depends(require_roles("ADMIN"))])
 def delete_ingrediente(ingrediente_id: int, session: Session = Depends(get_session)) -> ApiResponse:
+    """Eliminar ingrediente (solo ADMIN)."""
     db_ingrediente = service.get_by_id(session, ingrediente_id)
     if not db_ingrediente:
         return error_response(message="Ingrediente no encontrado", status_code=404)

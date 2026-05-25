@@ -27,7 +27,7 @@ class Pedido(PedidoBase, table=True):
     # Relaciones
     detalles: List["DetallePedido"] = Relationship(back_populates="pedido", cascade_delete=True)
     pagos: List["Pago"] = Relationship(back_populates="pedido", cascade_delete=True)
-    historial: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido", cascade_delete=True)
+    historial: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido", cascade_delete=False)
 
 # ============ DETALLE PEDIDO ============
 class DetallePedidoBase(SQLModel):

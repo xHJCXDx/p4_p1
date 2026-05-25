@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 from datetime import datetime
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from app.core.repository import BaseRepository
 from app.venta.model import Pedido, DetallePedido, Pago, HistorialEstadoPedido
 
@@ -16,9 +16,24 @@ class PedidoRepository(BaseRepository[Pedido]):
         statement = select(Pedido).where(Pedido.deleted_at.is_(None)).offset(offset).limit(limit)
         items = self.session.exec(statement).all()
 
-        # Count total (excluding soft-deleted)
-        count_statement = select(Pedido).where(Pedido.deleted_at.is_(None))
-        total = len(self.session.exec(count_statement).all())
+        # Count total (excluding soft-deleted) - efficient with func.count()
+        count_statement = select(func.count(Pedido.id)).where(Pedido.deleted_at.is_(None))
+        total = self.session.exec(count_statement).one()
+
+        return items, total
+
+    def get_all_for_user(self, usuario_id: int, limit: int = 100, offset: int = 0) -> Tuple[List[Pedido], int]:
+        """Get all pedidos for a specific user (CLIENT only sees their own)"""
+        statement = select(Pedido).where(
+            (Pedido.deleted_at.is_(None)) & (Pedido.usuario_id == usuario_id)
+        ).offset(offset).limit(limit)
+        items = self.session.exec(statement).all()
+
+        # Count total - efficient with func.count()
+        count_statement = select(func.count(Pedido.id)).where(
+            (Pedido.deleted_at.is_(None)) & (Pedido.usuario_id == usuario_id)
+        )
+        total = self.session.exec(count_statement).one()
 
         return items, total
 
