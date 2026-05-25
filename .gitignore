@@ -1,6 +1,8 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
 *$py.class
 *.so
 .Python
@@ -23,6 +25,8 @@ wheels/
 venv/
 ENV/
 env/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # IDE
 .vscode/
@@ -31,11 +35,15 @@ env/
 *.swo
 *~
 .DS_Store
+*.sublime-project
+*.sublime-workspace
 
 # Node
 node_modules/
 npm-debug.log
 yarn-error.log
+.npm
+package-lock.json
 
 # Frontend build
 frontend/dist/
@@ -58,3 +66,7 @@ requirements-dev.txt
 .pytest_cache/
 .coverage
 htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
